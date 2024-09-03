@@ -29,7 +29,7 @@ func main() {
 
 		c = buf[0]
 
-		fmt.Println(buf, string(buf[:]))
+		fmt.Printf("%v\r\n", string(c))
 
 		if c == 'q' {
 			break
@@ -49,13 +49,13 @@ func enterRawMode() (*state, error) {
 
 	oldState := &state{termios: *termios}
 
-	termios.Iflag &^= unix.IXON
-	termios.Iflag &^= unix.IEXTEN
-	termios.Iflag &^= unix.ICRNL
+	termios.Iflag &^= unix.IXON | unix.IEXTEN | unix.ICRNL
+	termios.Lflag &^= unix.ECHO | unix.ICANON | unix.ISIG
+	termios.Oflag &^= unix.OPOST
 
-	termios.Lflag &^= unix.ECHO
-	termios.Lflag &^= unix.ICANON
-	termios.Lflag &^= unix.ISIG
+	// turn off other random flags bc of raw mode tradition
+	termios.Iflag &^= unix.BRKINT | unix.INPCK | unix.ISTRIP
+	termios.Cflag &^= unix.CS8
 
 	unix.IoctlSetTermios(fd, unix.TCSETS, termios)
 

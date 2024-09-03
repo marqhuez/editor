@@ -29,6 +29,8 @@ func main() {
 
 		c = buf[0]
 
+		fmt.Println(buf, string(buf[:]))
+
 		if c == 'q' {
 			break
 		}
@@ -47,8 +49,13 @@ func enterRawMode() (*state, error) {
 
 	oldState := &state{termios: *termios}
 
+	termios.Iflag &^= unix.IXON
+	termios.Iflag &^= unix.IEXTEN
+	termios.Iflag &^= unix.ICRNL
+
 	termios.Lflag &^= unix.ECHO
 	termios.Lflag &^= unix.ICANON
+	termios.Lflag &^= unix.ISIG
 
 	unix.IoctlSetTermios(fd, unix.TCSETS, termios)
 

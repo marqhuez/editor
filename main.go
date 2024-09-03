@@ -24,19 +24,23 @@ func main() {
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading from stdin:", err)
-			break
+			os.Exit(1)
 		}
 
 		c = buf[0]
 
-		fmt.Printf("%v\r\n", string(c))
-
-		if c == 'q' {
+		if c == ctrlKey('q') {
 			break
 		}
+
+		fmt.Printf("%v\r\n", string(c))
 	}
 
 	disableRawMode(oldState)
+}
+
+func ctrlKey(k byte) byte {
+	return k & 0x1f
 }
 
 func enterRawMode() (*state, error) {

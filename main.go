@@ -11,32 +11,36 @@ type state struct {
 	termios unix.Termios
 }
 
-func main() {
-	oldState, err := enterRawMode()
-	if err != nil {
-		panic(err)
-	}
+var oldState *state = &state{}
 
-	var c byte
+func main() {
+	enterRawMode()
 
 	for {
-		buf := make([]byte, 1)
-		_, err := os.Stdin.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading from stdin:", err)
-			os.Exit(1)
-		}
+		processKeypress()
+	}
+}
 
-		c = buf[0]
+func processKeypress() {
+	c := readKey()
 
-		if c == ctrlKey('q') {
-			break
-		}
+	switch c {
+	case ctrlKey('q'):
+		exit(0)
+		break
+	}
+}
 
-		fmt.Printf("%v\r\n", string(c))
+func readKey() byte {
+	buf := make([]byte, 1)
+	_, err := os.Stdin.Read(buf)
+	if err != nil {
+		fmt.Println("Error reading from stdin:", err)
+		exit(1)
 	}
 
-	disableRawMode(oldState)
+	fmt.Printf("%v\r\n", string(buf[0]))
+	return buf[0]
 }
 
 func ctrlKey(k byte) byte {
@@ -51,7 +55,7 @@ func enterRawMode() (*state, error) {
 		panic(err)
 	}
 
-	oldState := &state{termios: *termios}
+	oldState = &state{termios: *termios}
 
 	termios.Iflag &^= unix.IXON | unix.IEXTEN | unix.ICRNL
 	termios.Lflag &^= unix.ECHO | unix.ICANON | unix.ISIG
@@ -66,7 +70,12 @@ func enterRawMode() (*state, error) {
 	return oldState, nil
 }
 
-func disableRawMode(state *state) {
+func disableRawMode() {
 	fd := int(os.Stdin.Fd())
-	unix.IoctlSetTermios(fd, unix.TCSETS, &state.termios)
+	unix.IoctlSetTermios(fd, unix.TCSETS, &oldState.termios)
+}
+
+func exit(code int) {
+	disableRawMode()
+	os.Exit(code)
 }
